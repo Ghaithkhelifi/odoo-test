@@ -1,0 +1,43 @@
+version: '3.8'
+
+# This file defines your application's services.
+# It tells Docker how to run your KDS app and the database.
+
+services:
+  # This is your main application service.
+  kds:
+    # 'build: .' tells Docker to find and use the 'Dockerfile' in this directory.
+    build: .
+    container_name: kds_app
+    # This ensures the database starts before the application.
+    depends_on:
+      - db
+    ports:
+      - "8069:8069" # Exposes the main application port to your server.
+      - "8072:8072" # Exposes the live-chat/notifications port.
+    volumes:
+      # This links a persistent storage volume for your application's file store.
+      - kds_data:/var/lib/odoo
+    environment:
+      # These are placeholders. We will set the real values in the Easypanel UI.
+      - HOST=db
+      - USER=odoo # IMPORTANT: This must stay 'odoo'. The application's internal setup requires this specific username.
+      - PASSWORD=${DB_PASSWORD} # This is the placeholder for your database password.
+
+  # This is the PostgreSQL database service.
+  db:
+    image: postgres:16
+    container_name: kds_postgres_db
+    environment:
+      - POSTGRES_DB=postgres
+      - POSTGRES_USER=odoo # IMPORTANT: This must also stay 'odoo' to match the app's user.
+      - POSTGRES_PASSWORD=${DB_PASSWORD} # The same password placeholder.
+    volumes:
+      # This links a persistent storage volume for your database files.
+      - kds_db_data:/var/lib/postgresql/data
+
+# This section officially creates the persistent storage volumes on your server.
+# Your data will be safe here even if you remove the containers.
+volumes:
+  kds_data:
+  kds_db_data:
